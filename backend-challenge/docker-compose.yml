@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    container_name: kart-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-kart_db}
+      POSTGRES_USER: ${DB_USER:-kart_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-kart_password}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./schemas:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-kart_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kart-network
+
+  # Kart API Application
+  kart-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kart-api
+    environment:
+      # Application configuration
+      IS_LOCAL: "false"
+      APP_NAME: "kart-api"
+      HOST: "localhost"
+      PORT: "8080"
+      RELEASE_ENV: "development"
+      LOG_LEVEL: "info"
+
+      # Database configuration
+      DB_HOST: "postgres"
+      DB_PORT: "5432"
+      DB_USER: "kart_user"
+      DB_PASSWORD: "kart_password"
+      DB_NAME: "postgres"
+      DB_SSL_MODE: "disable"
+      DB_MAX_OPEN_CONNS: "25"
+      DB_MAX_IDLE_CONNS: "5"
+      DB_CONN_MAX_LIFETIME: "300"
+
+      # Coupon configuration
+      COUPON_SOURCE: "database"
+      COUPON_DATA_DIR: "/app/data"
+      COUPON_FORCE_MIGRATION: "false"
+
+    ports:
+      - "${PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - kart-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  kart-network:
+    driver: bridge
