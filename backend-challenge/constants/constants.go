@@ -13,6 +13,7 @@ const (
 	DBUser            = "DB_USER"
 	DBPassword        = "DB_PASSWORD"
 	DBName            = "DB_NAME"
+	DBSchema          = "DB_SCHEMA"
 	DBSSLMode         = "DB_SSL_MODE"
 	DBMaxOpenConns    = "DB_MAX_OPEN_CONNS"
 	DBMaxIdleConns    = "DB_MAX_IDLE_CONNS"

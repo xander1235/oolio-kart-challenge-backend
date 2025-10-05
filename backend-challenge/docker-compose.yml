@@ -6,16 +6,16 @@ services:
     image: postgres:14-alpine
     container_name: kart-postgres
     environment:
-      POSTGRES_DB: ${DB_NAME:-kart_db}
-      POSTGRES_USER: ${DB_USER:-kart_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-kart_password}
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./schemas:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-kart_user}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -40,9 +40,10 @@ services:
       # Database configuration
       DB_HOST: "postgres"
       DB_PORT: "5432"
-      DB_USER: "kart_user"
-      DB_PASSWORD: "kart_password"
+      DB_USER: "postgres"
+      DB_PASSWORD: "postgres"
       DB_NAME: "postgres"
+      DB_SCHEMA: "kart"
       DB_SSL_MODE: "disable"
       DB_MAX_OPEN_CONNS: "25"
       DB_MAX_IDLE_CONNS: "5"

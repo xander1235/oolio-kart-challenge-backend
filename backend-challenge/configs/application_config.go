@@ -24,6 +24,7 @@ type DatabaseConfig struct {
 	User            string
 	Password        string
 	Name            string
+	Schema          string
 	SSLMode         string
 	MaxOpenConns    int
 	MaxIdleConns    int
@@ -96,6 +97,7 @@ func setApplicationConfig() error {
 		User:            os.Getenv(constants.DBUser),
 		Password:        os.Getenv(constants.DBPassword),
 		Name:            os.Getenv(constants.DBName),
+		Schema:          os.Getenv(constants.DBSchema),
 		SSLMode:         os.Getenv(constants.DBSSLMode),
 		MaxOpenConns:    maxOpenConns,
 		MaxIdleConns:    maxIdleConns,
