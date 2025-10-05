@@ -100,6 +100,7 @@ func buildConnectionString() (string, error) {
 	if cfg.SSLMode != "" {
 		query.Set("sslmode", cfg.SSLMode)
 	}
+	query.Set("search_path", "kart")
 	u.RawQuery = query.Encode()
 
 	return u.String(), nil

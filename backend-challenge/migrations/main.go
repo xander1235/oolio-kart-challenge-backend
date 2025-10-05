@@ -19,6 +19,7 @@ type Config struct {
 	DBUser     string
 	DBPassword string
 	DBName     string
+	DBSchema   string
 	DBSSLMode  string
 
 	CouponSource         string
@@ -30,20 +31,16 @@ type Config struct {
 }
 
 func main() {
-	// Parse command line flags
 	migrationType := flag.String("type", "all", "Migration type: coupon, product, or all")
 	envFile := flag.String("env", ".env", "Path to .env file")
 	flag.Parse()
 
-	// Load environment variables
 	if err := godotenv.Load(*envFile); err != nil {
 		log.Printf("Warning: Could not load .env file: %v", err)
 	}
 
-	// Load configuration
 	config := loadConfig()
 
-	// Create database connection
 	ctx := context.Background()
 	pool, err := createDBPool(ctx, config)
 	if err != nil {
@@ -53,7 +50,6 @@ func main() {
 
 	log.Println("Connected to database successfully")
 
-	// Run migrations based on type
 	switch *migrationType {
 	case "coupon":
 		if err := runCouponMigration(ctx, pool, config); err != nil {
@@ -84,9 +80,10 @@ func loadConfig() *Config {
 	return &Config{
 		DBHost:               getEnv("DB_HOST", "localhost"),
 		DBPort:               getEnv("DB_PORT", "5432"),
-		DBUser:               getEnv("DB_USER", "postgres"),
+		DBUser:               getEnv("DB_USER", ""),
 		DBPassword:           getEnv("DB_PASSWORD", ""),
-		DBName:               getEnv("DB_NAME", "kart_db"),
+		DBName:               getEnv("DB_NAME", "postgres"),
+		DBSchema:             getEnv("DB_SCHEMA", "kart"),
 		DBSSLMode:            getEnv("DB_SSL_MODE", "disable"),
 		CouponSource:         getEnv("COUPON_SOURCE", "local"),
 		CouponDataDir:        getEnv("COUPON_DATA_DIR", "../data"),
@@ -97,17 +94,40 @@ func loadConfig() *Config {
 }
 
 func createDBPool(ctx context.Context, config *Config) (*pgxpool.Pool, error) {
-	connString := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
-		config.DBUser,
-		config.DBPassword,
-		config.DBHost,
-		config.DBPort,
-		config.DBName,
-		config.DBSSLMode,
-	)
+	var connStr string
+	if config.DBUser != "" && config.DBPassword != "" {
+		connStr = fmt.Sprintf(
+			"postgres://%s:%s@%s:%s/%s?sslmode=%s&search_path=%s",
+			config.DBUser,
+			config.DBPassword,
+			config.DBHost,
+			config.DBPort,
+			config.DBName,
+			config.DBSSLMode,
+			config.DBSchema,
+		)
+	} else if config.DBUser != "" && config.DBPassword == "" {
+		connStr = fmt.Sprintf(
+			"postgres://%s@%s:%s/%s?sslmode=%s&search_path=%s",
+			config.DBUser,
+			config.DBHost,
+			config.DBPort,
+			config.DBName,
+			config.DBSSLMode,
+			config.DBSchema,
+		)
+	} else {
+		connStr = fmt.Sprintf(
+			"postgres://%s:%s/%s?sslmode=%s&search_path=%s",
+			config.DBHost,
+			config.DBPort,
+			config.DBName,
+			config.DBSSLMode,
+			config.DBSchema,
+		)
+	}
 
-	poolConfig, err := pgxpool.ParseConfig(connString)
+	poolConfig, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse connection string: %w", err)
 	}
