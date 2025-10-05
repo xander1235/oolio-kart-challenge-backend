@@ -65,13 +65,26 @@ https://github.com/oolio-group/kart-challenge/tree/advanced-challenge/backend-ch
 - Docker & Docker Compose
 - PostgreSQL 14+ (if running locally without Docker)
 
-## Quick Start with Docker Compose (Recommended)
+## Quick Start with Docker (Recommended)
+
+### Option 1: Using Docker Compose
+
+```bash
+docker compose up --build -d
+```
 
 This will:
 - Build the Go application
 - Start PostgreSQL database
 - Run database migrations automatically
 - Start the API server on port 8080
+
+### Stop the services
+
+```bash
+# Using Docker Compose
+docker compose down
+```
 
 ### Access the application
 - **API Base URL**: http://localhost:8080/api
