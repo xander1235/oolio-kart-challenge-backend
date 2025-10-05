@@ -1,0 +1,68 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+.DS_Store
+
+# Data files (large files not needed in container)
+data/
+*.gz
+
+# Test files
+tests/
+*_test.go
+coverage.out
+coverage.html
+*.test
+
+# Logs
+*.log
+server.log
+migration*.log
+
+# Environment files (use environment variables instead)
+.env
+.env.local
+.env.production
+
+# Build artifacts
+bin/
+dist/
+kart
+kart-api
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Profiling artifacts
+*.prof
+*.pprof
+*.out
+
+# Temporary files
+*.tmp
+*.swp
+*~
+.cache
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.circleci/
+
+# Development tools
+Makefile
+air.toml
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Documentation (keep README)
+*.md
+!README.md

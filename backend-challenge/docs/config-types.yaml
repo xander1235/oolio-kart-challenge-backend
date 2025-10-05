@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oapi-codegen/oapi-codegen/HEAD/configuration-schema.json
+
+# This config generates model types into models/ folder
+package: models
+output: ../models/api_types.gen.go
+
+generate:
+  models: true
+
+output-options:
+  skip-prune: true

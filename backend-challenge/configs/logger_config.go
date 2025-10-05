@@ -3,12 +3,12 @@ package configs
 import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"oolio.com/kart/constants"
 	"os"
 )
 
 var Logger *zap.Logger = zap.NewExample(zap.AddCaller())
 
+// InitLogger initializes the logger
 func InitLogger(logLevel string) *zap.Logger {
 	level, err := zapcore.ParseLevel(logLevel)
 	if err != nil {
@@ -26,7 +26,7 @@ func InitLogger(logLevel string) *zap.Logger {
 
 	core := zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), level)
 
-	logger := zap.New(core, zap.AddCaller()).Named(constants.AppName)
+	logger := zap.New(core, zap.AddCaller()).Named(AppName)
 	Logger = logger
 	return logger
 }

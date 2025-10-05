@@ -17,7 +17,7 @@ type healthCheckController struct {
 // @Schemes http https
 // @Tags health-check
 // @Produce json
-// @Success 200 {object} interface{}
+// @Success 200 {object} map[string]interface{}
 // @Router /health [get]
 func (h *healthCheckController) HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{

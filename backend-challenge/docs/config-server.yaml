@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oapi-codegen/oapi-codegen/HEAD/configuration-schema.json
+
+# This config generates server interface into controllers/ folder
+package: controllers
+output: ../controllers/api_server.gen.go
+
+generate:
+  gin-server: true
+  strict-server: true
+
+output-options:
+  skip-prune: true
+
+import-mapping:
+  # Tell oapi-codegen where to import the models from
+  openapi.yaml: oolio.com/kart/models
