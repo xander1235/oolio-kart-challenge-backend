@@ -28,6 +28,7 @@ docker run -d -p 8080:8080 \
   -e DB_HOST=host.docker.internal \
   -e DB_PORT=5432 \
   -e DB_NAME=postgres \
+  -e DB_SCHEMA=public \
   -e DB_SSL_MODE=disable \
   -e DB_MAX_OPEN_CONNS=25 \
   -e DB_MAX_IDLE_CONNS=5 \

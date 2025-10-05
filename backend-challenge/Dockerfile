@@ -16,9 +16,6 @@ RUN go mod download
 # Copy source code (data folder excluded via .dockerignore)
 COPY . .
 
-# Run tests (will skip if no tests exist)
-RUN go test -v .tests/... || echo "No tests found or tests skipped"
-
 # Build the application
 # CGO_ENABLED=0 for static binary
 # -ldflags="-s -w" to strip debug info and reduce size
