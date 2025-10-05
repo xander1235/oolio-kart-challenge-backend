@@ -33,19 +33,16 @@ func (p *ProductController) GetProducts(c *gin.Context) {
 	var limit, offset *int
 	if limitQueryStr != "" {
 		parsedLimit, err := strconv.Atoi(limitQueryStr)
-		if err != nil {
-			limit = nil
+		if err == nil {
+			limit = &parsedLimit
 		}
-		limit = &parsedLimit
 	}
 
 	if offsetQueryStr != "" {
 		parsedOffset, err := strconv.Atoi(offsetQueryStr)
-		if err != nil {
-			offset = nil
-			limit = nil
+		if err == nil {
+			offset = &parsedOffset
 		}
-		offset = &parsedOffset
 	}
 
 	products := p.productService.GetProducts(c.Request.Context(), limit, offset)
