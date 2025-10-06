@@ -97,11 +97,11 @@ func (o *OrderRepositoryImpl) CreateOrder(ctx context.Context, order *models.Ord
 		}
 
 		batchResults := tx.SendBatch(ctx, batch)
-		defer batchResults.Close()
 
 		for i := range items {
 			err = batchResults.QueryRow().Scan(&items[i].Id, &items[i].CreatedAt)
 			if err != nil {
+				batchResults.Close()
 				txErr := tx.Rollback(ctx)
 				if txErr != nil {
 					configs.Logger.Error("failed to rollback transaction", zap.Error(txErr))
@@ -111,9 +111,19 @@ func (o *OrderRepositoryImpl) CreateOrder(ctx context.Context, order *models.Ord
 			}
 			items[i].OrderId = order.Id
 		}
+
+		if closeErr := batchResults.Close(); closeErr != nil {
+			configs.Logger.Error("failed to close batch results", zap.Error(closeErr))
+			txErr := tx.Rollback(ctx)
+			if txErr != nil {
+				configs.Logger.Error("failed to rollback transaction", zap.Error(txErr))
+			}
+			return exceptions.GenericException("failed to close batch results", http.StatusInternalServerError)
+		}
 	}
 
 	if err = tx.Commit(ctx); err != nil {
+		configs.Logger.Error("failed to commit transaction", zap.Error(err))
 		return exceptions.GenericException("failed to commit transaction", http.StatusInternalServerError)
 	}
 
