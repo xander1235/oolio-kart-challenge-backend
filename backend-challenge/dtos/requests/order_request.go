@@ -9,5 +9,5 @@ type PlaceOrderRequest struct {
 // OrderItemRequest represents an item in the order request
 type OrderItemRequest struct {
 	ProductId string `json:"productId" binding:"required" example:"1" doc:"Product ID to order"`
-	Quantity  *int   `json:"quantity" binding:"required,min=1" example:"2" doc:"Quantity to order (minimum 1)"`
+	Quantity  *int   `json:"quantity" binding:"required,gt=0" example:"2" doc:"Quantity to order (must be greater than 0)"`
 } //@name OrderItemReq

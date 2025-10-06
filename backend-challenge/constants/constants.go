@@ -5,6 +5,7 @@ const (
 	AppName    = "APP_NAME"
 	Host       = "HOST"
 	Port       = "PORT"
+	APIKey     = "API_KEY"
 	ReleaseEnv = "RELEASE_ENV"
 	LogLevel   = "LOG_LEVEL"
 

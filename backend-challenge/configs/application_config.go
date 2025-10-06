@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"errors"
 	"github.com/joho/godotenv"
 	"oolio.com/kart/constants"
 	"os"
@@ -12,6 +13,7 @@ var (
 	AppName    string
 	Host       string
 	Port       int
+	APIKey     string
 	ReleaseEnv string
 	LogLevel   string
 	DBConfig   DatabaseConfig
@@ -61,6 +63,12 @@ func setApplicationConfig() error {
 	Port, err = strconv.Atoi(os.Getenv(constants.Port))
 	if err != nil {
 		return err
+	}
+
+	APIKey = os.Getenv(constants.APIKey)
+
+	if APIKey == "" {
+		return errors.New("API_KEY is not set")
 	}
 
 	// ReleaseEnv can be "local", "dev, "staging", "production"

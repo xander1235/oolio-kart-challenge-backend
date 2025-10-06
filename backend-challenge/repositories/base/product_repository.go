@@ -18,4 +18,7 @@ type ProductRepository interface {
 
 	// ListProducts retrieves a list of products from the database
 	ListProducts(ctx context.Context, limit, offset *int) []*models.Product
+
+	// GetByIds retrieves a list of products by their IDs from the database
+	GetByIds(ctx context.Context, ids []int64) ([]*models.Product, *errors.ErrorDetails)
 }
