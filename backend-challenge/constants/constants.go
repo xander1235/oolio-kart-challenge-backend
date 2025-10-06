@@ -20,10 +20,5 @@ const (
 	DBMaxIdleConns    = "DB_MAX_IDLE_CONNS"
 	DBConnMaxLifetime = "DB_CONN_MAX_LIFETIME"
 
-	CouponSource         = "COUPON_SOURCE"
-	CouponDataDir        = "COUPON_DATA_DIR"
-	CouponS3BaseURL      = "COUPON_S3_BASE_URL"
-	CouponForceMigration = "COUPON_FORCE_MIGRATION"
-
 	ProdMode = "Prod"
 )

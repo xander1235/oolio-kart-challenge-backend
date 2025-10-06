@@ -115,10 +115,10 @@ func (s *OrderServiceImpl) PlaceOrder(ctx context.Context, request *requests.Pla
 	}
 
 	// TODO Discount logic comes here
-	var total float64
+	var total = subtotal
 	if discount > 0 {
 		// TODO Apply discount with limit
-		total = subtotal - discount
+		total -= discount
 	}
 
 	order := &models.Order{
