@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"encoding/json"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 	"net/http"
@@ -24,13 +25,17 @@ func NewOrderRepositoryImpl(pool *pgxpool.Pool) *OrderRepositoryImpl {
 
 // CreateOrder creates a new order in the database
 func (o *OrderRepositoryImpl) CreateOrder(ctx context.Context, order *models.Order, items []models.OrderItem) *errors.ErrorDetails {
-	tx, err := o.pool.Begin(ctx)
+	txOptions := pgx.TxOptions{
+		IsoLevel:   pgx.ReadCommitted,
+		AccessMode: pgx.ReadWrite,
+	}
+
+	tx, err := o.pool.BeginTx(ctx, txOptions)
 	if err != nil {
 		configs.Logger.Error("failed to begin transaction", zap.Error(err))
 		return exceptions.GenericException("failed to begin transaction", http.StatusInternalServerError)
 	}
 
-	// Marshal order meta
 	var metaJSON []byte
 	if order.Meta != nil {
 		metaJSON, err = json.Marshal(order.Meta)
@@ -62,9 +67,7 @@ func (o *OrderRepositoryImpl) CreateOrder(ctx context.Context, order *models.Ord
 	}
 
 	if len(items) > 0 {
-		itemQuery := `INSERT INTO order_items (order_id, product_id, quantity, unit_price, price, meta)
-                      VALUES ($1, $2, $3, $4, $5, $6)
-                      RETURNING id, created_at`
+		batch := &pgx.Batch{}
 
 		for i := range items {
 			var itemMetaJSON []byte
@@ -80,15 +83,24 @@ func (o *OrderRepositoryImpl) CreateOrder(ctx context.Context, order *models.Ord
 				}
 			}
 
-			err = tx.QueryRow(ctx, itemQuery,
+			batch.Queue(
+				`INSERT INTO order_items (order_id, product_id, quantity, unit_price, price, meta)
+				 VALUES ($1, $2, $3, $4, $5, $6)
+				 RETURNING id, created_at`,
 				order.Id,
 				items[i].ProductId,
 				items[i].Quantity,
 				items[i].UnitPrice,
 				items[i].Price,
 				itemMetaJSON,
-			).Scan(&items[i].Id, &items[i].CreatedAt)
+			)
+		}
 
+		batchResults := tx.SendBatch(ctx, batch)
+		defer batchResults.Close()
+
+		for i := range items {
+			err = batchResults.QueryRow().Scan(&items[i].Id, &items[i].CreatedAt)
 			if err != nil {
 				txErr := tx.Rollback(ctx)
 				if txErr != nil {
@@ -97,16 +109,11 @@ func (o *OrderRepositoryImpl) CreateOrder(ctx context.Context, order *models.Ord
 				configs.Logger.Error("failed to save order item", zap.Error(err))
 				return exceptions.GenericException("failed to save order item", http.StatusInternalServerError)
 			}
-
 			items[i].OrderId = order.Id
 		}
 	}
 
 	if err = tx.Commit(ctx); err != nil {
-		txErr := tx.Rollback(ctx)
-		if txErr != nil {
-			configs.Logger.Error("failed to rollback transaction", zap.Error(txErr))
-		}
 		return exceptions.GenericException("failed to commit transaction", http.StatusInternalServerError)
 	}
 

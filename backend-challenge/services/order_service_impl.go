@@ -17,17 +17,19 @@ import (
 )
 
 type OrderServiceImpl struct {
-	orderRepository   repoBase.OrderRepository
-	productRepository repoBase.ProductRepository
-	couponService     serviceBase.CouponService
+	orderRepository       repoBase.OrderRepository
+	productRepository     repoBase.ProductRepository
+	couponService         serviceBase.CouponService
+	maxQuantityPerProduct int
 }
 
 // NewOrderServiceImpl creates a new instance of OrderServiceImpl
 func NewOrderServiceImpl(orderRepository repoBase.OrderRepository, productRepository repoBase.ProductRepository, couponService serviceBase.CouponService) *OrderServiceImpl {
 	return &OrderServiceImpl{
-		orderRepository:   orderRepository,
-		productRepository: productRepository,
-		couponService:     couponService,
+		orderRepository:       orderRepository,
+		productRepository:     productRepository,
+		couponService:         couponService,
+		maxQuantityPerProduct: 1000,
 	}
 }
 
@@ -54,13 +56,24 @@ func (s *OrderServiceImpl) PlaceOrder(ctx context.Context, request *requests.Pla
 	itemMap := make(map[string]*models.OrderItem)
 	for _, reqItem := range request.Items {
 		if existing, found := itemMap[reqItem.ProductId]; found {
-			existing.Quantity += *reqItem.Quantity
+			newQty := existing.Quantity + *reqItem.Quantity
+			if newQty > s.maxQuantityPerProduct {
+				configs.Logger.Error("quantity exceeds maximum limit")
+				return nil, exceptions.BadRequestException("quantity exceeds maximum limit")
+			}
+			existing.Quantity = newQty
 		} else {
 			productId, err := strconv.ParseInt(reqItem.ProductId, 10, 64)
 			if err != nil {
 				configs.Logger.Error("invalid product id", zap.Any("error", err))
 				return nil, exceptions.BadRequestException("invalid product id")
 			}
+
+			if *reqItem.Quantity > s.maxQuantityPerProduct {
+				configs.Logger.Error("quantity exceeds maximum limit", zap.Any("error", err))
+				return nil, exceptions.BadRequestException("quantity exceeds maximum limit")
+			}
+
 			domainItem := models.OrderItem{
 				ProductId: productId,
 				Quantity:  *reqItem.Quantity,
@@ -83,7 +96,7 @@ func (s *OrderServiceImpl) PlaceOrder(ctx context.Context, request *requests.Pla
 		productIds = append(productIds, aggregatedItems[i].ProductId)
 	}
 
-	const batchSize = 50
+	const batchSize = 100
 	for i := 0; i < len(productIds); i += batchSize {
 		end := i + batchSize
 		if end > len(productIds) {
