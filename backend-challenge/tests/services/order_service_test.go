@@ -269,7 +269,17 @@ func TestOrderService_PlaceOrder_MultipleItems(t *testing.T) {
 		{Id: 2, Name: "Product 2", Price: 15.00, Category: "Cat2", Status: "available"},
 	}
 
-	mockProductRepo.On("GetByIds", mock.Anything, []int64{1, 2}).Return(mockProducts, nil)
+	mockProductRepo.On("GetByIds", mock.Anything, mock.MatchedBy(func(ids []int64) bool {
+		if len(ids) != 2 {
+			return false
+		}
+		idMap := make(map[int64]bool)
+		for _, id := range ids {
+			idMap[id] = true
+		}
+		return idMap[1] && idMap[2]
+	})).Return(mockProducts, nil).Once()
+
 	mockOrderRepo.On("CreateOrder", mock.Anything, mock.AnythingOfType("*models.Order"), mock.AnythingOfType("[]models.OrderItem")).
 		Run(func(args mock.Arguments) {
 			order := args.Get(1).(*models.Order)
