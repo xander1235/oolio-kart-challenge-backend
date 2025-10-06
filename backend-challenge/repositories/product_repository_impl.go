@@ -187,6 +187,34 @@ func (p *ProductRepositoryImpl) ListProducts(ctx context.Context, offset, limit 
 	return products
 }
 
+// GetByIds Retrieves a list of products by their IDs from the database
+func (p *ProductRepositoryImpl) GetByIds(ctx context.Context, ids []int64) ([]*models.Product, *errors.ErrorDetails) {
+	query := `SELECT id, name, category, price, status, image, meta, created_at, modified_at
+              FROM products
+              WHERE id = ANY($1)`
+
+	rows, err := p.pool.Query(ctx, query, ids)
+	if err != nil {
+		return []*models.Product{}, exceptions.GenericException("failed to fetch products", http.StatusInternalServerError)
+	}
+	defer rows.Close()
+
+	var products []*models.Product
+	for rows.Next() {
+		product, scanErr := scanProduct(rows)
+		if scanErr != nil {
+			continue
+		}
+		products = append(products, product)
+	}
+
+	if rows.Err() != nil {
+		return []*models.Product{}, exceptions.GenericException("failed to fetch products", http.StatusInternalServerError)
+	}
+
+	return products, nil
+}
+
 func scanProduct(row pgx.Row) (*models.Product, error) {
 	var (
 		imageBytes []byte

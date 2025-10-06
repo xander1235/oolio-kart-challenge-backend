@@ -32,15 +32,17 @@ func TestOrderService_PlaceOrder_Success(t *testing.T) {
 		},
 	}
 
-	mockProduct := &models.Product{
-		Id:       1,
-		Name:     "Margherita Pizza",
-		Price:    12.99,
-		Category: "Pizza",
-		Status:   "available",
+	mockProducts := []*models.Product{
+		{
+			Id:       1,
+			Name:     "Margherita Pizza",
+			Price:    12.99,
+			Category: "Pizza",
+			Status:   "available",
+		},
 	}
 
-	mockProductRepo.On("GetById", mock.Anything, int64(1)).Return(mockProduct, nil)
+	mockProductRepo.On("GetByIds", mock.Anything, []int64{1}).Return(mockProducts, nil)
 	mockOrderRepo.On("CreateOrder", mock.Anything, mock.AnythingOfType("*models.Order"), mock.AnythingOfType("[]models.OrderItem")).
 		Run(func(args mock.Arguments) {
 			order := args.Get(1).(*models.Order)
@@ -83,15 +85,17 @@ func TestOrderService_PlaceOrder_WithValidCoupon(t *testing.T) {
 		},
 	}
 
-	mockProduct := &models.Product{
-		Id:       1,
-		Name:     "Margherita Pizza",
-		Price:    12.99,
-		Category: "Pizza",
-		Status:   "available",
+	mockProducts := []*models.Product{
+		{
+			Id:       1,
+			Name:     "Margherita Pizza",
+			Price:    12.99,
+			Category: "Pizza",
+			Status:   "available",
+		},
 	}
 
-	mockProductRepo.On("GetById", mock.Anything, int64(1)).Return(mockProduct, nil)
+	mockProductRepo.On("GetByIds", mock.Anything, []int64{1}).Return(mockProducts, nil)
 	mockOrderRepo.On("CreateOrder", mock.Anything, mock.AnythingOfType("*models.Order"), mock.AnythingOfType("[]models.OrderItem")).
 		Run(func(args mock.Arguments) {
 			order := args.Get(1).(*models.Order)
@@ -195,11 +199,11 @@ func TestOrderService_PlaceOrder_ProductNotFound(t *testing.T) {
 	}
 
 	mockError := &errors.ErrorDetails{
-		ErrorCode: http.StatusNotFound,
-		Message:   "product not found",
+		ErrorCode: http.StatusInternalServerError,
+		Message:   "failed to fetch products",
 	}
 
-	mockProductRepo.On("GetById", mock.Anything, int64(999)).Return(nil, mockError)
+	mockProductRepo.On("GetByIds", mock.Anything, []int64{999}).Return(nil, mockError)
 
 	result, err := service.PlaceOrder(context.Background(), request)
 
@@ -260,11 +264,12 @@ func TestOrderService_PlaceOrder_MultipleItems(t *testing.T) {
 		},
 	}
 
-	mockProduct1 := &models.Product{Id: 1, Name: "Product 1", Price: 10.00, Category: "Cat1", Status: "available"}
-	mockProduct2 := &models.Product{Id: 2, Name: "Product 2", Price: 15.00, Category: "Cat2", Status: "available"}
+	mockProducts := []*models.Product{
+		{Id: 1, Name: "Product 1", Price: 10.00, Category: "Cat1", Status: "available"},
+		{Id: 2, Name: "Product 2", Price: 15.00, Category: "Cat2", Status: "available"},
+	}
 
-	mockProductRepo.On("GetById", mock.Anything, int64(1)).Return(mockProduct1, nil)
-	mockProductRepo.On("GetById", mock.Anything, int64(2)).Return(mockProduct2, nil)
+	mockProductRepo.On("GetByIds", mock.Anything, []int64{1, 2}).Return(mockProducts, nil)
 	mockOrderRepo.On("CreateOrder", mock.Anything, mock.AnythingOfType("*models.Order"), mock.AnythingOfType("[]models.OrderItem")).
 		Run(func(args mock.Arguments) {
 			order := args.Get(1).(*models.Order)
@@ -305,9 +310,9 @@ func TestOrderService_PlaceOrder_DuplicateItems_ShouldAggregate(t *testing.T) {
 		},
 	}
 
-	mockProduct := &models.Product{Id: 1, Name: "Product 1", Price: 10.00, Category: "Cat1", Status: "available"}
+	mockProducts := []*models.Product{{Id: 1, Name: "Product 1", Price: 10.00, Category: "Cat1", Status: "available"}}
 
-	mockProductRepo.On("GetById", mock.Anything, int64(1)).Return(mockProduct, nil)
+	mockProductRepo.On("GetByIds", mock.Anything, []int64{1}).Return(mockProducts, nil)
 	mockOrderRepo.On("CreateOrder", mock.Anything, mock.AnythingOfType("*models.Order"), mock.AnythingOfType("[]models.OrderItem")).
 		Run(func(args mock.Arguments) {
 			order := args.Get(1).(*models.Order)
@@ -347,13 +352,13 @@ func TestOrderService_PlaceOrder_CreateOrderFails(t *testing.T) {
 		},
 	}
 
-	mockProduct := &models.Product{Id: 1, Name: "Product 1", Price: 10.00, Category: "Cat1", Status: "available"}
+	mockProducts := []*models.Product{{Id: 1, Name: "Product 1", Price: 10.00, Category: "Cat1", Status: "available"}}
 	mockError := &errors.ErrorDetails{
 		ErrorCode: http.StatusInternalServerError,
-		Message:   "database error",
+		Message:   "failed to fetch products",
 	}
 
-	mockProductRepo.On("GetById", mock.Anything, int64(1)).Return(mockProduct, nil)
+	mockProductRepo.On("GetByIds", mock.Anything, []int64{1}).Return(mockProducts, nil)
 	mockOrderRepo.On("CreateOrder", mock.Anything, mock.AnythingOfType("*models.Order"), mock.AnythingOfType("[]models.OrderItem")).Return(mockError)
 
 	result, err := service.PlaceOrder(context.Background(), request)

@@ -29,12 +29,6 @@ func (o *OrderRepositoryImpl) CreateOrder(ctx context.Context, order *models.Ord
 		configs.Logger.Error("failed to begin transaction", zap.Error(err))
 		return exceptions.GenericException("failed to begin transaction", http.StatusInternalServerError)
 	}
-	defer func() {
-		txErr := tx.Rollback(ctx)
-		if txErr != nil {
-			configs.Logger.Error("failed to rollback transaction", zap.Error(txErr))
-		}
-	}()
 
 	// Marshal order meta
 	var metaJSON []byte
@@ -59,6 +53,10 @@ func (o *OrderRepositoryImpl) CreateOrder(ctx context.Context, order *models.Ord
 	).Scan(&order.Id, &order.CreatedAt, &order.ModifiedAt)
 
 	if err != nil {
+		txErr := tx.Rollback(ctx)
+		if txErr != nil {
+			configs.Logger.Error("failed to rollback transaction", zap.Error(txErr))
+		}
 		configs.Logger.Error("failed to save order", zap.Error(err))
 		return exceptions.GenericException("failed to save order", http.StatusInternalServerError)
 	}
@@ -73,6 +71,10 @@ func (o *OrderRepositoryImpl) CreateOrder(ctx context.Context, order *models.Ord
 			if items[i].Meta != nil {
 				itemMetaJSON, err = json.Marshal(items[i].Meta)
 				if err != nil {
+					txErr := tx.Rollback(ctx)
+					if txErr != nil {
+						configs.Logger.Error("failed to rollback transaction", zap.Error(txErr))
+					}
 					configs.Logger.Error("failed to marshal order item meta", zap.Error(err))
 					return exceptions.GenericException("failed to marshal order item meta", http.StatusInternalServerError)
 				}
@@ -88,6 +90,10 @@ func (o *OrderRepositoryImpl) CreateOrder(ctx context.Context, order *models.Ord
 			).Scan(&items[i].Id, &items[i].CreatedAt)
 
 			if err != nil {
+				txErr := tx.Rollback(ctx)
+				if txErr != nil {
+					configs.Logger.Error("failed to rollback transaction", zap.Error(txErr))
+				}
 				configs.Logger.Error("failed to save order item", zap.Error(err))
 				return exceptions.GenericException("failed to save order item", http.StatusInternalServerError)
 			}
@@ -97,6 +103,10 @@ func (o *OrderRepositoryImpl) CreateOrder(ctx context.Context, order *models.Ord
 	}
 
 	if err = tx.Commit(ctx); err != nil {
+		txErr := tx.Rollback(ctx)
+		if txErr != nil {
+			configs.Logger.Error("failed to rollback transaction", zap.Error(txErr))
+		}
 		return exceptions.GenericException("failed to commit transaction", http.StatusInternalServerError)
 	}
 

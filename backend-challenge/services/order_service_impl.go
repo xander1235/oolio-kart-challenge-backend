@@ -75,27 +75,57 @@ func (s *OrderServiceImpl) PlaceOrder(ctx context.Context, request *requests.Pla
 	}
 
 	var subtotal float64
+	var discount float64 = 0
 	var products []*models.Product
 
+	productIds := make([]int64, 0, len(aggregatedItems))
 	for i := range aggregatedItems {
-		product, prodErr := s.productRepository.GetById(ctx, aggregatedItems[i].ProductId)
-		if prodErr != nil {
-			configs.Logger.Error("product not found", zap.Any("error", prodErr))
+		productIds = append(productIds, aggregatedItems[i].ProductId)
+	}
+
+	const batchSize = 50
+	for i := 0; i < len(productIds); i += batchSize {
+		end := i + batchSize
+		if end > len(productIds) {
+			end = len(productIds)
+		}
+		chunk := productIds[i:end]
+		chunkProducts, err := s.productRepository.GetByIds(ctx, chunk)
+		if err != nil {
+			configs.Logger.Error("products not found", zap.Any("error", err))
+			return nil, exceptions.BadRequestException("products not found")
+		}
+		products = append(products, chunkProducts...)
+	}
+
+	productMap := make(map[int64]*models.Product)
+	for _, product := range products {
+		productMap[product.Id] = product
+	}
+
+	for i := range aggregatedItems {
+		product, exists := productMap[aggregatedItems[i].ProductId]
+		if !exists {
 			return nil, exceptions.BadRequestException("product not found")
 		}
 
 		aggregatedItems[i].UnitPrice = product.Price
 		aggregatedItems[i].Price = product.Price * float64(aggregatedItems[i].Quantity)
 		subtotal += aggregatedItems[i].Price
+	}
 
-		products = append(products, product)
+	// TODO Discount logic comes here
+	var total = subtotal
+	if discount > 0 {
+		// TODO Apply discount with limit
+		total -= discount
 	}
 
 	order := &models.Order{
 		CouponCode: request.CouponCode,
 		Subtotal:   subtotal,
-		Discount:   0,
-		Total:      subtotal,
+		Discount:   discount,
+		Total:      total,
 	}
 
 	if saveErr := s.orderRepository.CreateOrder(ctx, order, aggregatedItems); saveErr != nil {

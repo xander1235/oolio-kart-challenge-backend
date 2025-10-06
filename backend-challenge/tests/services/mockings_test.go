@@ -44,6 +44,14 @@ func (m *MockProductRepository) Update(ctx context.Context, product *models.Prod
 	return args.Get(0).(*errors.ErrorDetails)
 }
 
+func (m *MockProductRepository) GetByIds(ctx context.Context, ids []int64) ([]*models.Product, *errors.ErrorDetails) {
+	args := m.Called(ctx, ids)
+	if args.Get(0) == nil {
+		return nil, args.Get(1).(*errors.ErrorDetails)
+	}
+	return args.Get(0).([]*models.Product), nil
+}
+
 // MockOrderRepository is a mock implementation of OrderRepository
 type MockOrderRepository struct {
 	mock.Mock

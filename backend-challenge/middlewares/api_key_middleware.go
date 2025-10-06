@@ -3,6 +3,7 @@ package middlewares
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"oolio.com/kart/configs"
 	"oolio.com/kart/dtos/responses"
 )
 
@@ -10,7 +11,7 @@ import (
 func APIKeyMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		apiKey := c.GetHeader("api_key")
-		if apiKey != "" {
+		if apiKey != "" && apiKey == configs.APIKey {
 			c.Next()
 		} else {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, responses.APIResponse{
